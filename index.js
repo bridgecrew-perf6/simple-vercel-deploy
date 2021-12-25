@@ -45,7 +45,7 @@ const main = async () => {
   core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
 
   const { context } = github;
-  core.info(JSON.stringify(github));
+  // core.info(JSON.stringify(github));
 
   let branchName;
   if (context.payload.pull_request) {
