@@ -179,6 +179,8 @@ const main = async () => {
         body: await buildComment({ titleText, deploymentUrl, context }),
       });
     }
+  } else {
+    core.info("github comment skipped.");
   }
 };
 main().catch((error) => {
