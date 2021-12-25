@@ -136,7 +136,7 @@ const main = async () => {
   }
 
   const projectName = await vercelInspect(deploymentUrl);
-  const titleText = `Deployment preview for ${projectName}.`;
+  const titleText = `Deployment preview for _${projectName}_.`;
 
   const octokit = github.getOctokit(githubToken);
   if (context.eventName === "pull_request") {
