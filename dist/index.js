@@ -1249,37 +1249,38 @@ const main = async () => {
   console.log(JSON.stringify(github));
 
   const branchName = context.payload.pull_request.head.ref || BRANCH_NAME;
+  console.log(branchName);
 
-  await exec("npx", [
-    "vercel",
-    ...(isProduction ? ["--prod"] : []),
-    "-t",
-    VERCEL_TOKEN,
-    "-m",
-    `githubCommitAuthorName=${context.actor}`,
-    "-m",
-    `githubCommitMessage=${context.payload.pull_request.title}`,
-    "-m",
-    `githubCommitOrg=${context.repo.owner}`,
-    "-m",
-    `githubCommitRef=${branchName}`,
-    "-m",
-    `githubCommitRepo=${context.repo.repo}`,
-    "-m",
-    `githubCommitRepoId=${context.repo.id}`,
-    "-m",
-    `githubCommitSha=${context.sha}`,
-    "-m",
-    "githubDeployment=1",
-    "-m",
-    `githubOrg=${context.repo.owner}`,
-    "-m",
-    `githubRepo=${context.repo.repo}`,
-    "-m",
-    `githubRepoId=${context.repo.id}`,
-    "-m",
-    `githubCommitAuthorLogin=${context.actor}`,
-  ]);
+  // await exec("npx", [
+  //   "vercel",
+  //   ...(isProduction ? ["--prod"] : []),
+  //   "-t",
+  //   VERCEL_TOKEN,
+  //   "-m",
+  //   `githubCommitAuthorName=${context.actor}`,
+  //   "-m",
+  //   `githubCommitMessage=${context.payload.pull_request.title}`,
+  //   "-m",
+  //   `githubCommitOrg=${context.repo.owner}`,
+  //   "-m",
+  //   `githubCommitRef=${branchName}`,
+  //   "-m",
+  //   `githubCommitRepo=${context.repo.repo}`,
+  //   "-m",
+  //   `githubCommitRepoId=${context.repo.id}`,
+  //   "-m",
+  //   `githubCommitSha=${context.sha}`,
+  //   "-m",
+  //   "githubDeployment=1",
+  //   "-m",
+  //   `githubOrg=${context.repo.owner}`,
+  //   "-m",
+  //   `githubRepo=${context.repo.repo}`,
+  //   "-m",
+  //   `githubRepoId=${context.repo.id}`,
+  //   "-m",
+  //   `githubCommitAuthorLogin=${context.actor}`,
+  // ]);
 };
 main().catch((error) => {
   core.setFailed(error.message);
