@@ -16,7 +16,7 @@ const main = async () => {
   core.exportVariable("VERCEL_PROJECT_ID", VERCEL_PROJECT_ID);
 
   const { context } = github;
-  // console.log(JSON.stringify(github));
+  core.info(JSON.stringify(github));
 
   let branchName;
   if (context.payload.pull_request) {
@@ -26,13 +26,14 @@ const main = async () => {
   } else {
     throw new Error("Branch name is undefined.");
   }
-  // console.log(branchName);
 
   let message;
   if (context.payload.pull_request) {
     message = context.payload.pull_request.title;
   } else if (context.payload.head_commit) {
     message = context.payload.head_commit.message;
+  } else {
+    message = `Deploy ${context.sha}`;
   }
 
   const options = {};
