@@ -10,19 +10,88 @@ const vercelProjectId = core.getInput("vercel-project-id");
 const isProduction = core.getInput("is-production") === "true";
 const { context } = github;
 
-const vercelInspect = async (
-  deploymentUrl: string
-): Promise<{ id?: string | null; name?: string | null }> => {
-  let myOutput = "";
-  let myError = "";
+const vercelDeploy = async (): Promise<string> => {
+  let branchName;
+  if (context.payload.pull_request) {
+    branchName = context.payload.pull_request.head.ref;
+  } else if (context.ref) {
+    branchName = context.ref.replace("refs/heads/", "");
+  } else {
+    throw new Error("Branch name is undefined.");
+  }
+
+  let message;
+  if (context.payload.pull_request) {
+    message = context.payload.pull_request.title;
+  } else if (context.payload.head_commit) {
+    message = context.payload.head_commit.message;
+  } else {
+    message = `Deploy ${context.sha}`;
+  }
+
+  let outstr = "";
+  let errstr = "";
   const options = {
     listeners: {
       stdout: (data: Buffer) => {
-        myOutput += data.toString();
+        outstr += data.toString();
         core.info(data.toString());
       },
       stderr: (data: Buffer) => {
-        myError += data.toString();
+        errstr += data.toString();
+        core.info(data.toString());
+      },
+    },
+  };
+
+  const repoId = (context.repo as any).id as number;
+  const args = [
+    "vercel",
+    ...(isProduction ? ["--prod"] : []),
+    "-t",
+    vercelToken,
+    "-m",
+    `githubCommitAuthorName=${context.actor}`,
+    "-m",
+    `githubCommitMessage=${message}`,
+    "-m",
+    `githubCommitOrg=${context.repo.owner}`,
+    "-m",
+    `githubCommitRef=${branchName}`,
+    "-m",
+    `githubCommitRepo=${context.repo.repo}`,
+    "-m",
+    `githubCommitRepoId=${repoId}`,
+    "-m",
+    `githubCommitSha=${context.sha}`,
+    "-m",
+    "githubDeployment=1",
+    "-m",
+    `githubOrg=${context.repo.owner}`,
+    "-m",
+    `githubRepo=${context.repo.repo}`,
+    "-m",
+    `githubRepoId=${repoId}`,
+    "-m",
+    `githubCommitAuthorLogin=${context.actor}`,
+  ];
+  await exec("npx", args, options);
+  return outstr;
+};
+
+const vercelInspect = async (
+  deploymentUrl: string
+): Promise<{ id?: string | null; name?: string | null }> => {
+  let outstr = "";
+  let errstr = "";
+  const options = {
+    listeners: {
+      stdout: (data: Buffer) => {
+        outstr += data.toString();
+        core.info(data.toString());
+      },
+      stderr: (data: Buffer) => {
+        errstr += data.toString();
         core.info(data.toString());
       },
     },
@@ -31,8 +100,8 @@ const vercelInspect = async (
   const args = ["vercel", "inspect", deploymentUrl, "-t", vercelToken];
   await exec("npx", args, options);
 
-  const idMatch = myError.match(/^\s+id\s+(.+)$/m);
-  const nameMatch = myError.match(/^\s+name\s+(.+)$/m);
+  const idMatch = errstr.match(/^\s+id\s+(.+)$/m);
+  const nameMatch = errstr.match(/^\s+name\s+(.+)$/m);
   return {
     id: idMatch && idMatch.length ? idMatch[1] : null,
     name: nameMatch && nameMatch.length ? nameMatch[1] : null,
@@ -72,72 +141,7 @@ const main = async () => {
   core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
   core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
 
-  let branchName;
-  if (context.payload.pull_request) {
-    branchName = context.payload.pull_request.head.ref;
-  } else if (context.ref) {
-    branchName = context.ref.replace("refs/heads/", "");
-  } else {
-    throw new Error("Branch name is undefined.");
-  }
-
-  let message;
-  if (context.payload.pull_request) {
-    message = context.payload.pull_request.title;
-  } else if (context.payload.head_commit) {
-    message = context.payload.head_commit.message;
-  } else {
-    message = `Deploy ${context.sha}`;
-  }
-
-  let myOutput = "";
-  let myError = "";
-  const options = {
-    listeners: {
-      stdout: (data: Buffer) => {
-        myOutput += data.toString();
-        core.info(data.toString());
-      },
-      stderr: (data: Buffer) => {
-        myError += data.toString();
-        core.info(data.toString());
-      },
-    },
-  };
-  const repoId = (context.repo as any).id as number;
-  const args = [
-    "vercel",
-    ...(isProduction ? ["--prod"] : []),
-    "-t",
-    vercelToken,
-    "-m",
-    `githubCommitAuthorName=${context.actor}`,
-    "-m",
-    `githubCommitMessage=${message}`,
-    "-m",
-    `githubCommitOrg=${context.repo.owner}`,
-    "-m",
-    `githubCommitRef=${branchName}`,
-    "-m",
-    `githubCommitRepo=${context.repo.repo}`,
-    "-m",
-    `githubCommitRepoId=${repoId}`,
-    "-m",
-    `githubCommitSha=${context.sha}`,
-    "-m",
-    "githubDeployment=1",
-    "-m",
-    `githubOrg=${context.repo.owner}`,
-    "-m",
-    `githubRepo=${context.repo.repo}`,
-    "-m",
-    `githubRepoId=${repoId}`,
-    "-m",
-    `githubCommitAuthorLogin=${context.actor}`,
-  ];
-  await exec("npx", args, options);
-
-  const deploymentUrl = myOutput;
+  const deploymentUrl = await vercelDeploy();
   if (deploymentUrl) {
     core.setOutput("preview-url", deploymentUrl);
   } else {

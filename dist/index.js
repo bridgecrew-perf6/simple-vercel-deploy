@@ -2258,49 +2258,7 @@ const vercelOrgId = core.getInput("vercel-org-id");
 const vercelProjectId = core.getInput("vercel-project-id");
 const isProduction = core.getInput("is-production") === "true";
 const { context } = github;
-const vercelInspect = async (deploymentUrl) => {
-    let myOutput = "";
-    let myError = "";
-    const options = {
-        listeners: {
-            stdout: (data) => {
-                myOutput += data.toString();
-                core.info(data.toString());
-            },
-            stderr: (data) => {
-                myError += data.toString();
-                core.info(data.toString());
-            },
-        },
-    };
-    const args = ["vercel", "inspect", deploymentUrl, "-t", vercelToken];
-    await exec_1.exec("npx", args, options);
-    const idMatch = myError.match(/^\s+id\s+(.+)$/m);
-    const nameMatch = myError.match(/^\s+name\s+(.+)$/m);
-    return {
-        id: idMatch && idMatch.length ? idMatch[1] : null,
-        name: nameMatch && nameMatch.length ? nameMatch[1] : null,
-    };
-};
-const buildComment = async ({ titleText, deploymentUrl, deploymentId, }) => {
-    const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${vercelToken}` },
-    });
-    const res = await getRes.json();
-    const sha = context.payload.pull_request
-        ? context.payload.pull_request.head.sha
-        : context.sha;
-    return `${titleText}
-
-🔍 Inspect: ${res.inspectorUrl || null}
-✅ Preview: ${deploymentUrl}
-
-Built with commit ${sha}.`;
-};
-const main = async () => {
-    core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
-    core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
+const vercelDeploy = async () => {
     let branchName;
     if (context.payload.pull_request) {
         branchName = context.payload.pull_request.head.ref;
@@ -2321,16 +2279,16 @@ const main = async () => {
     else {
         message = `Deploy ${context.sha}`;
     }
-    let myOutput = "";
-    let myError = "";
+    let outstr = "";
+    let errstr = "";
     const options = {
         listeners: {
             stdout: (data) => {
-                myOutput += data.toString();
+                outstr += data.toString();
                 core.info(data.toString());
             },
             stderr: (data) => {
-                myError += data.toString();
+                errstr += data.toString();
                 core.info(data.toString());
             },
         },
@@ -2367,7 +2325,52 @@ const main = async () => {
         `githubCommitAuthorLogin=${context.actor}`,
     ];
     await exec_1.exec("npx", args, options);
-    const deploymentUrl = myOutput;
+    return outstr;
+};
+const vercelInspect = async (deploymentUrl) => {
+    let outstr = "";
+    let errstr = "";
+    const options = {
+        listeners: {
+            stdout: (data) => {
+                outstr += data.toString();
+                core.info(data.toString());
+            },
+            stderr: (data) => {
+                errstr += data.toString();
+                core.info(data.toString());
+            },
+        },
+    };
+    const args = ["vercel", "inspect", deploymentUrl, "-t", vercelToken];
+    await exec_1.exec("npx", args, options);
+    const idMatch = errstr.match(/^\s+id\s+(.+)$/m);
+    const nameMatch = errstr.match(/^\s+name\s+(.+)$/m);
+    return {
+        id: idMatch && idMatch.length ? idMatch[1] : null,
+        name: nameMatch && nameMatch.length ? nameMatch[1] : null,
+    };
+};
+const buildComment = async ({ titleText, deploymentUrl, deploymentId, }) => {
+    const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${vercelToken}` },
+    });
+    const res = await getRes.json();
+    const sha = context.payload.pull_request
+        ? context.payload.pull_request.head.sha
+        : context.sha;
+    return `${titleText}
+
+🔍 Inspect: ${res.inspectorUrl || null}
+✅ Preview: ${deploymentUrl}
+
+Built with commit ${sha}.`;
+};
+const main = async () => {
+    core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
+    core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
+    const deploymentUrl = await vercelDeploy();
     if (deploymentUrl) {
         core.setOutput("preview-url", deploymentUrl);
     }
