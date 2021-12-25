@@ -31,7 +31,7 @@ const vercelInspect = async (deploymentUrl) => {
     core.info("using scope");
     args.push("--scope", vercelScope);
   }
-  await exec.exec("npx", args, options);
+  await exec("npx", args, options);
 
   const match = myError.match(/^\s+name\s+(.+)$/m);
   return match && match.length ? match[1] : null;
