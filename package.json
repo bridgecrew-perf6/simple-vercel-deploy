@@ -2,7 +2,7 @@
   "name": "vercel-deploy-action",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "git@github.com:kik4/vercel-deploy-action.git",
+  "repository": "git@github.com:kik4/simple-vercel-deploy.git",
   "author": "kik4 <kik4.contact@gmail.com>",
   "license": "MIT",
   "scripts": {
