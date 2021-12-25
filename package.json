@@ -5,15 +5,27 @@
   "repository": "git@github.com:kik4/vercel-deploy-action.git",
   "author": "kik4 <kik4.contact@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "build": "ncc build index.js",
+    "prepare": "husky install",
+    "pre-commit": "lint-staged && yarn build && git add dist/index.js"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/exec": "^1.1.0",
     "@actions/github": "^5.0.0",
     "@zeit/ncc": "^0.22.3",
-    "prettier": "^2.5.1",
     "vercel": "^23.1.2"
   },
-  "scripts": {
-    "build": "ncc build index.js"
+  "devDependencies": {
+    "husky": "^7.0.4",
+    "lint-staged": "^12.1.4",
+    "prettier": "^2.5.1"
   }
 }

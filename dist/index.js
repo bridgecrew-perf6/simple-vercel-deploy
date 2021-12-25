@@ -1248,8 +1248,7 @@ const main = async () => {
   const { context } = github;
   console.log(JSON.stringify(github));
 
-  const branchName = BRANCH_NAME;
-  const commitMessage = "test";
+  const branchName = context.payload.pull_request.head.ref || BRANCH_NAME;
 
   await exec("npx", [
     "vercel",
@@ -1259,7 +1258,7 @@ const main = async () => {
     "-m",
     `githubCommitAuthorName=${context.actor}`,
     "-m",
-    `githubCommitMessage=${commitMessage}`,
+    `githubCommitMessage=${context.payload.pull_request.title}`,
     "-m",
     `githubCommitOrg=${context.repo.owner}`,
     "-m",
