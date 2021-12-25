@@ -2280,7 +2280,6 @@ const vercelDeploy = async () => {
         message = `Deploy ${context.sha}`;
     }
     let outstr = "";
-    let errstr = "";
     const options = {
         listeners: {
             stdout: (data) => {
@@ -2288,7 +2287,6 @@ const vercelDeploy = async () => {
                 core.info(data.toString());
             },
             stderr: (data) => {
-                errstr += data.toString();
                 core.info(data.toString());
             },
         },
@@ -2328,12 +2326,10 @@ const vercelDeploy = async () => {
     return outstr;
 };
 const vercelInspect = async (deploymentUrl) => {
-    let outstr = "";
     let errstr = "";
     const options = {
         listeners: {
             stdout: (data) => {
-                outstr += data.toString();
                 core.info(data.toString());
             },
             stderr: (data) => {

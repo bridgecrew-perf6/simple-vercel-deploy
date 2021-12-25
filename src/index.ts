@@ -30,7 +30,6 @@ const vercelDeploy = async (): Promise<string> => {
   }
 
   let outstr = "";
-  let errstr = "";
   const options = {
     listeners: {
       stdout: (data: Buffer) => {
@@ -38,7 +37,6 @@ const vercelDeploy = async (): Promise<string> => {
         core.info(data.toString());
       },
       stderr: (data: Buffer) => {
-        errstr += data.toString();
         core.info(data.toString());
       },
     },
@@ -82,12 +80,10 @@ const vercelDeploy = async (): Promise<string> => {
 const vercelInspect = async (
   deploymentUrl: string
 ): Promise<{ id?: string | null; name?: string | null }> => {
-  let outstr = "";
   let errstr = "";
   const options = {
     listeners: {
       stdout: (data: Buffer) => {
-        outstr += data.toString();
         core.info(data.toString());
       },
       stderr: (data: Buffer) => {
