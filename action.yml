@@ -8,7 +8,7 @@ inputs:
     description: 'vercel token'
     required: true
   vercel-org-id:
-    description: 'vercel user/organization id'
+    description: 'vercel team / personal id'
     required: true
   vercel-project-id:
     description: 'vercel project id'
