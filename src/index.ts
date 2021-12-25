@@ -139,9 +139,9 @@ const main = async () => {
 
   const deploymentUrl = await vercelDeploy();
   if (deploymentUrl) {
-    core.setOutput("preview-url", deploymentUrl);
+    core.setOutput("previewUrl", deploymentUrl);
   } else {
-    throw new Error("preview-url is undefined");
+    throw new Error("previewUrl is undefined");
   }
 
   const { name: projectName, id: deploymentId } = await vercelInspect(
