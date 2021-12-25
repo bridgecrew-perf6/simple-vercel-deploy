@@ -2,6 +2,10 @@ const core = require("@actions/core");
 const { exec } = require("@actions/exec");
 const github = require("@actions/github");
 
+const buildComment = ({ titleText, deploymentUrl, context }) => `${titleText}
+Preview ${deploymentUrl}
+Built with commit ${context.sha}.`;
+
 const main = async () => {
   const isProduction = core.getInput("is-production") === "true";
 
@@ -15,19 +19,27 @@ const main = async () => {
   // console.log(JSON.stringify(github));
 
   let branchName;
-  if (context.ref) {
-    branchName = context.ref.replace("refs/heads/", "");
-  } else if (context.payload.pull_request) {
+  if (context.payload.pull_request) {
     branchName = context.payload.pull_request.head.ref;
+  } else if (context.ref) {
+    branchName = context.ref.replace("refs/heads/", "");
   } else {
     throw new Error("Branch name is undefined.");
   }
   // console.log(branchName);
 
+  let message;
+  if (context.payload.pull_request) {
+    message = context.payload.pull_request.title;
+  } else if (context.payload.head_commit) {
+    message = context.payload.head_commit.message;
+  }
+
   const options = {};
+  let myOutput = "";
+  let myError = "";
   options.listeners = {
     stdout: (data) => {
-      // eslint-disable-next-line no-unused-vars
       myOutput += data.toString();
       core.info(data.toString());
     },
@@ -36,61 +48,69 @@ const main = async () => {
       core.info(data.toString());
     },
   };
-  // await exec(
-  //   "npx",
-  //   [
-  //     "vercel",
-  //     ...(isProduction ? ["--prod"] : []),
-  //     "-t",
-  //     VERCEL_TOKEN,
-  //     "-m",
-  //     `githubCommitAuthorName=${context.actor}`,
-  //     "-m",
-  //     `githubCommitMessage=${context.payload.pull_request.title}`,
-  //     "-m",
-  //     `githubCommitOrg=${context.repo.owner}`,
-  //     "-m",
-  //     `githubCommitRef=${branchName}`,
-  //     "-m",
-  //     `githubCommitRepo=${context.repo.repo}`,
-  //     "-m",
-  //     `githubCommitRepoId=${context.repo.id}`,
-  //     "-m",
-  //     `githubCommitSha=${context.sha}`,
-  //     "-m",
-  //     "githubDeployment=1",
-  //     "-m",
-  //     `githubOrg=${context.repo.owner}`,
-  //     "-m",
-  //     `githubRepo=${context.repo.repo}`,
-  //     "-m",
-  //     `githubRepoId=${context.repo.id}`,
-  //     "-m",
-  //     `githubCommitAuthorLogin=${context.actor}`,
-  //   ],
-  //   options
-  // );
+  await exec(
+    "npx",
+    [
+      "vercel",
+      ...(isProduction ? ["--prod"] : []),
+      "-t",
+      VERCEL_TOKEN,
+      "-m",
+      `githubCommitAuthorName=${context.actor}`,
+      "-m",
+      `githubCommitMessage=${message}`,
+      "-m",
+      `githubCommitOrg=${context.repo.owner}`,
+      "-m",
+      `githubCommitRef=${branchName}`,
+      "-m",
+      `githubCommitRepo=${context.repo.repo}`,
+      "-m",
+      `githubCommitRepoId=${context.repo.id}`,
+      "-m",
+      `githubCommitSha=${context.sha}`,
+      "-m",
+      "githubDeployment=1",
+      "-m",
+      `githubOrg=${context.repo.owner}`,
+      "-m",
+      `githubRepo=${context.repo.repo}`,
+      "-m",
+      `githubRepoId=${context.repo.id}`,
+      "-m",
+      `githubCommitAuthorLogin=${context.actor}`,
+    ],
+    options
+  );
+
+  const deploymentUrl = myOutput;
+  if (deploymentUrl) {
+    core.setOutput("preview-url", deploymentUrl);
+  } else {
+    throw new Error("preview-url is undefined");
+  }
+
+  const titleText = `Deployment ready for ${context.payload.repository.name}.`;
 
   const octokit = github.getOctokit(GITHUB_TOKEN);
-
   if (context.eventName === "pull_request") {
     const res = await octokit.rest.issues.listComments({
       ...context.repo,
       issue_number: context.issue.number,
     });
-    const comment = res.data.find((v) => v.body.includes("test comment"));
+    const comment = res.data.find((v) => v.body.includes(titleText));
     const commentId = comment && comment.id;
     if (commentId) {
       await octokit.rest.issues.updateComment({
         ...context.repo,
         comment_id: commentId,
-        body: "test comment",
+        body: buildComment({ titleText, deploymentUrl, context }),
       });
     } else {
       await octokit.rest.issues.createComment({
         ...context.repo,
         issue_number: context.issue.number,
-        body: "test comment",
+        body: buildComment({ titleText, deploymentUrl, context }),
       });
     }
   } else {
@@ -98,19 +118,19 @@ const main = async () => {
       ...context.repo,
       commit_sha: context.sha,
     });
-    const comment = res.data.find((v) => v.body.includes("test comment"));
+    const comment = res.data.find((v) => v.body.includes(titleText));
     const commentId = comment && comment.id;
     if (commentId) {
       await octokit.rest.repos.updateCommitComment({
         ...context.repo,
         comment_id: commentId,
-        body: "test comment",
+        body: buildComment({ titleText, deploymentUrl, context }),
       });
     } else {
       await octokit.rest.repos.createCommitComment({
         ...context.repo,
         commit_sha: context.sha,
-        body: "test comment",
+        body: buildComment({ titleText, deploymentUrl, context }),
       });
     }
   }
