@@ -1,26 +1,30 @@
-const core = require("@actions/core");
-const { exec } = require("@actions/exec");
-const github = require("@actions/github");
-const fetch = require("node-fetch");
+import * as core from "@actions/core";
+import { exec } from "@actions/exec";
+import * as github from "@actions/github";
+import fetch from "node-fetch";
 
 const githubToken = core.getInput("github-token");
 const vercelToken = core.getInput("vercel-token");
 const vercelOrgId = core.getInput("vercel-org-id");
 const vercelProjectId = core.getInput("vercel-project-id");
 const isProduction = core.getInput("is-production") === "true";
+const { context } = github;
 
-const vercelInspect = async (deploymentUrl) => {
+const vercelInspect = async (
+  deploymentUrl: string
+): Promise<{ id?: string | null; name?: string | null }> => {
   let myOutput = "";
   let myError = "";
-  const options = {};
-  options.listeners = {
-    stdout: (data) => {
-      myOutput += data.toString();
-      core.info(data.toString());
-    },
-    stderr: (data) => {
-      myError += data.toString();
-      core.info(data.toString());
+  const options = {
+    listeners: {
+      stdout: (data: Buffer) => {
+        myOutput += data.toString();
+        core.info(data.toString());
+      },
+      stderr: (data: Buffer) => {
+        myError += data.toString();
+        core.info(data.toString());
+      },
     },
   };
 
@@ -38,8 +42,11 @@ const vercelInspect = async (deploymentUrl) => {
 const buildComment = async ({
   titleText,
   deploymentUrl,
-  context,
   deploymentId,
+}: {
+  titleText: string;
+  deploymentUrl: string;
+  deploymentId: string;
 }) => {
   const getRes = await fetch(
     `https://api.vercel.com/v13/deployments/${deploymentId}`,
@@ -65,9 +72,6 @@ const main = async () => {
   core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
   core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
 
-  const { context } = github;
-  // core.info(JSON.stringify(github));
-
   let branchName;
   if (context.payload.pull_request) {
     branchName = context.payload.pull_request.head.ref;
@@ -86,19 +90,21 @@ const main = async () => {
     message = `Deploy ${context.sha}`;
   }
 
-  const options = {};
   let myOutput = "";
   let myError = "";
-  options.listeners = {
-    stdout: (data) => {
-      myOutput += data.toString();
-      core.info(data.toString());
-    },
-    stderr: (data) => {
-      myError += data.toString();
-      core.info(data.toString());
+  const options = {
+    listeners: {
+      stdout: (data: Buffer) => {
+        myOutput += data.toString();
+        core.info(data.toString());
+      },
+      stderr: (data: Buffer) => {
+        myError += data.toString();
+        core.info(data.toString());
+      },
     },
   };
+  const repoId = (context.repo as any).id as number;
   const args = [
     "vercel",
     ...(isProduction ? ["--prod"] : []),
@@ -115,7 +121,7 @@ const main = async () => {
     "-m",
     `githubCommitRepo=${context.repo.repo}`,
     "-m",
-    `githubCommitRepoId=${context.repo.id}`,
+    `githubCommitRepoId=${repoId}`,
     "-m",
     `githubCommitSha=${context.sha}`,
     "-m",
@@ -125,7 +131,7 @@ const main = async () => {
     "-m",
     `githubRepo=${context.repo.repo}`,
     "-m",
-    `githubRepoId=${context.repo.id}`,
+    `githubRepoId=${repoId}`,
     "-m",
     `githubCommitAuthorLogin=${context.actor}`,
   ];
@@ -141,6 +147,13 @@ const main = async () => {
   const { name: projectName, id: deploymentId } = await vercelInspect(
     deploymentUrl
   );
+  if (!projectName) {
+    throw new Error("projectName is empty");
+  }
+  if (!deploymentId) {
+    throw new Error("deploymentId is empty");
+  }
+
   const titleText = `Deployment preview for _${projectName}_.`;
 
   const octokit = github.getOctokit(githubToken);
@@ -149,7 +162,7 @@ const main = async () => {
       ...context.repo,
       issue_number: context.issue.number,
     });
-    const comment = res.data.find((v) => v.body.includes(titleText));
+    const comment = res.data.find((v) => v.body?.includes(titleText));
     const commentId = comment && comment.id;
     if (commentId) {
       await octokit.rest.issues.updateComment({
@@ -158,7 +171,6 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          context,
           deploymentId,
         }),
       });
@@ -169,7 +181,6 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          context,
           deploymentId,
         }),
       });
@@ -188,7 +199,6 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          context,
           deploymentId,
         }),
       });
@@ -199,7 +209,6 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          context,
           deploymentId,
         }),
       });

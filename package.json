@@ -6,7 +6,7 @@
   "author": "kik4 <kik4.contact@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "ncc build index.js",
+    "build": "ncc build ./src/index.ts",
     "prepare": "husky install",
     "pre-commit": "lint-staged && yarn build && git add dist/index.js"
   },
@@ -25,6 +25,7 @@
     "vercel": "^23.1.2"
   },
   "devDependencies": {
+    "@types/node-fetch": "2",
     "husky": "^7.0.4",
     "lint-staged": "^12.1.4",
     "prettier": "^2.5.1"

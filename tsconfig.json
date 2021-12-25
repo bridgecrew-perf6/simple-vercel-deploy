@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "lib": ["esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "importsNotUsedAsValues": "error",
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"],
+      "@test/*": ["test/*"]
+    },
+    "noErrorTruncation": true,
+    "sourceMap": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js"],
+  "exclude": ["node_modules", "./dist"]
+}
