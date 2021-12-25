@@ -1369,7 +1369,7 @@ const main = async () => {
     throw new Error("preview-url is undefined");
   }
 
-  const projectName = vercelInspect(deploymentUrl);
+  const projectName = await vercelInspect(deploymentUrl);
   const titleText = `Deployment preview for ${projectName}.`;
 
   const octokit = github.getOctokit(githubToken);
