@@ -1,6 +1,6 @@
-# Vercel Deploy Action
+# Simple Vercel Deploy
 
-Vercel にデプロイする GitHub Actions。
+Vercel にデプロイする GitHub Action。
 
 ## 使い方
 

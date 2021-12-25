@@ -1,5 +1,5 @@
-name: 'Vercel Deploy Action'
-description: 'Vercel にデプロイ'
+name: 'Simple Vercel Deploy'
+description: 'Deploy to Vercel'
 inputs:
   github-token:
     description: 'github token'
