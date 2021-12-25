@@ -1239,8 +1239,7 @@ const github = __webpack_require__(469);
 const main = async () => {
   const isProduction = core.getInput("is-production") === "true";
 
-  const { VERCEL_ORG_ID, VERCEL_PROJECT_ID, VERCEL_TOKEN, BRANCH_NAME } =
-    process.env;
+  const { VERCEL_ORG_ID, VERCEL_PROJECT_ID, VERCEL_TOKEN } = process.env;
 
   core.exportVariable("VERCEL_ORG_ID", VERCEL_ORG_ID);
   core.exportVariable("VERCEL_PROJECT_ID", VERCEL_PROJECT_ID);
@@ -1248,7 +1247,14 @@ const main = async () => {
   const { context } = github;
   console.log(JSON.stringify(github));
 
-  const branchName = context.payload.pull_request.head.ref || BRANCH_NAME;
+  let branchName;
+  if (context.ref) {
+    branchName = context.ref.replace("refs/heads/", "");
+  } else if (context.payload.pull_request) {
+    branchName = context.payload.pull_request.head.ref;
+  } else {
+    throw new Error("Branch name is undefined.");
+  }
   console.log(branchName);
 
   // await exec("npx", [
