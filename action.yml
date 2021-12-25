@@ -1,10 +1,25 @@
 name: 'Vercel Deploy Action'
 description: 'Vercel にデプロイ'
 inputs:
+  github-token:
+    description: 'github token'
+    required: true
+  vercel-token:
+    description: 'vercel token'
+    required: true
+  vercel-org-id:
+    description: 'vercel user/organization id'
+    required: true
+  vercel-project-id:
+    description: 'vercel project id'
+    required: true
   is-production:
     description: 'production flag'
     required: false
     default: 'false'
+  scope:
+    description: 'team id (optional)'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
