@@ -1,0 +1,13 @@
+name: 'Vercel Deploy Action'
+description: 'Vercel にデプロイ'
+inputs:
+  is-production:
+    description: 'production flag'
+    required: false
+    default: 'false'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+branding:
+  icon: 'check-circle'
+  color: 'gray-dark'
