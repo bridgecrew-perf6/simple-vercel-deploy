@@ -145,7 +145,7 @@ const main = async () => {
         body: buildComment({ titleText, deploymentUrl, context }),
       });
     }
-  } else {
+  } else if (context.eventName === "push") {
     const res = await octokit.rest.repos.listCommentsForCommit({
       ...context.repo,
       commit_sha: context.sha,
