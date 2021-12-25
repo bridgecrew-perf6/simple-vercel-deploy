@@ -8,7 +8,6 @@ const vercelToken = core.getInput("vercel-token");
 const vercelOrgId = core.getInput("vercel-org-id");
 const vercelProjectId = core.getInput("vercel-project-id");
 const isProduction = core.getInput("is-production") === "true";
-const vercelScope = core.getInput("scope");
 
 const vercelInspect = async (deploymentUrl) => {
   let myOutput = "";
@@ -26,11 +25,6 @@ const vercelInspect = async (deploymentUrl) => {
   };
 
   const args = ["vercel", "inspect", deploymentUrl, "-t", vercelToken];
-
-  if (vercelScope) {
-    core.info("using scope");
-    args.push("--scope", vercelScope);
-  }
   await exec("npx", args, options);
 
   const idMatch = myError.match(/^\s+id\s+(.+)$/m);
@@ -135,10 +129,6 @@ const main = async () => {
     "-m",
     `githubCommitAuthorLogin=${context.actor}`,
   ];
-  if (vercelScope) {
-    core.info("using scope");
-    args.push("--scope", vercelScope);
-  }
   await exec("npx", args, options);
 
   const deploymentUrl = myOutput;

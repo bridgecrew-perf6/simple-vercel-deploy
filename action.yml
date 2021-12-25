@@ -17,9 +17,6 @@ inputs:
     description: 'production flag'
     required: false
     default: 'false'
-  scope:
-    description: 'team id (optional)'
-    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'

@@ -29,5 +29,4 @@ jobs:
 | github-token      | required | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。 |
 | vercel-org-id     | required | デプロイしたい Vercel の team / personal ID。                           |
 | vercel-project-id | required | デプロイしたい Vercel のプロジェクトの ID。                             |
-| scope             | optional | チーム開発の場合、チーム名を指定する。                                  |
 | is-production     | optional | true / false。true の場合は production デプロイ。                       |
