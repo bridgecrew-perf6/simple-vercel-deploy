@@ -1267,19 +1267,29 @@ const vercelInspect = async (deploymentUrl) => {
   }
   await exec("npx", args, options);
 
-  const match = myError.match(/^\s+name\s+(.+)$/m);
-  return match && match.length ? match[1] : null;
+  const idMatch = myError.match(/^\s+id\s+(.+)$/m);
+  const nameMatch = myError.match(/^\s+name\s+(.+)$/m);
+  return {
+    id: idMatch && idMatch.length ? idMatch[1] : null,
+    name: nameMatch && nameMatch.length ? nameMatch[1] : null,
+  };
 };
 
-const buildComment = async ({ titleText, deploymentUrl, context }) => {
+const buildComment = async ({
+  titleText,
+  deploymentUrl,
+  context,
+  deploymentId,
+}) => {
   const getRes = await fetch(
-    `https://api.vercel.com/v13/deployments/${deploymentUrl}`,
+    `https://api.vercel.com/v13/deployments/${deploymentId}`,
     {
       method: "GET",
-      headers: { Authorization: `Bearer ${process.env.vercelToken}` },
+      headers: { Authorization: `Bearer ${vercelToken}` },
     }
   );
   const res = await getRes.json();
+  console.log(res);
   return `${titleText}
 
 🔍 Inspect: ${res.inspectorUrl || null}
@@ -1369,7 +1379,9 @@ const main = async () => {
     throw new Error("preview-url is undefined");
   }
 
-  const projectName = await vercelInspect(deploymentUrl);
+  const { name: projectName, id: deploymentId } = await vercelInspect(
+    deploymentUrl
+  );
   const titleText = `Deployment preview for _${projectName}_.`;
 
   const octokit = github.getOctokit(githubToken);
@@ -1384,13 +1396,23 @@ const main = async () => {
       await octokit.rest.issues.updateComment({
         ...context.repo,
         comment_id: commentId,
-        body: await buildComment({ titleText, deploymentUrl, context }),
+        body: await buildComment({
+          titleText,
+          deploymentUrl,
+          context,
+          deploymentId,
+        }),
       });
     } else {
       await octokit.rest.issues.createComment({
         ...context.repo,
         issue_number: context.issue.number,
-        body: await buildComment({ titleText, deploymentUrl, context }),
+        body: await buildComment({
+          titleText,
+          deploymentUrl,
+          context,
+          deploymentId,
+        }),
       });
     }
   } else if (context.eventName === "push") {
@@ -1404,13 +1426,23 @@ const main = async () => {
       await octokit.rest.repos.updateCommitComment({
         ...context.repo,
         comment_id: commentId,
-        body: await buildComment({ titleText, deploymentUrl, context }),
+        body: await buildComment({
+          titleText,
+          deploymentUrl,
+          context,
+          deploymentId,
+        }),
       });
     } else {
       await octokit.rest.repos.createCommitComment({
         ...context.repo,
         commit_sha: context.sha,
-        body: await buildComment({ titleText, deploymentUrl, context }),
+        body: await buildComment({
+          titleText,
+          deploymentUrl,
+          context,
+          deploymentId,
+        }),
       });
     }
   } else {
