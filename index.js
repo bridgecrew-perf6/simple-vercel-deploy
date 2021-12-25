@@ -55,13 +55,16 @@ const buildComment = async ({
     }
   );
   const res = await getRes.json();
-  console.log(res);
+
+  const sha = context.payload.pull_request
+    ? context.payload.pull_request.head.sha
+    : context.sha;
   return `${titleText}
 
 🔍 Inspect: ${res.inspectorUrl || null}
 ✅ Preview: ${deploymentUrl}
 
-Built with commit ${context.sha}.`;
+Built with commit ${sha}.`;
 };
 
 const main = async () => {
