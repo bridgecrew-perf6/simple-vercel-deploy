@@ -2326,39 +2326,23 @@ const vercelDeploy = async () => {
     return outstr;
 };
 const vercelInspect = async (deploymentUrl) => {
-    let errstr = "";
-    const options = {
-        listeners: {
-            stdout: (data) => {
-                core.info(data.toString());
-            },
-            stderr: (data) => {
-                errstr += data.toString();
-                core.info(data.toString());
-            },
-        },
-    };
-    const args = ["vercel", "inspect", deploymentUrl, "-t", vercelToken];
-    await exec_1.exec("npx", args, options);
-    const idMatch = errstr.match(/^\s+id\s+(.+)$/m);
-    const nameMatch = errstr.match(/^\s+name\s+(.+)$/m);
-    return {
-        id: idMatch && idMatch.length ? idMatch[1] : null,
-        name: nameMatch && nameMatch.length ? nameMatch[1] : null,
-    };
-};
-const buildComment = async ({ titleText, deploymentUrl, deploymentId, }) => {
-    const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentId}`, {
+    const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentUrl.replace("https://", "")}`, {
         method: "GET",
         headers: { Authorization: `Bearer ${vercelToken}` },
     });
     const res = await getRes.json();
+    return {
+        projectName: res.name,
+        inspectorUrl: res.inspectorUrl,
+    };
+};
+const buildComment = async ({ titleText, deploymentUrl, inspectorUrl, }) => {
     const sha = context.payload.pull_request
         ? context.payload.pull_request.head.sha
         : context.sha;
     return `${titleText}
 
-🔍 Inspect: ${res.inspectorUrl || null}
+🔍 Inspect: ${inspectorUrl}
 ✅ Preview: ${deploymentUrl}
 
 Built with commit ${sha}.`;
@@ -2373,14 +2357,8 @@ const main = async () => {
     else {
         throw new Error("previewUrl is undefined");
     }
-    const { name: projectName, id: deploymentId } = await vercelInspect(deploymentUrl);
-    if (!projectName) {
-        throw new Error("projectName is empty");
-    }
-    if (!deploymentId) {
-        throw new Error("deploymentId is empty");
-    }
-    const titleText = `Deployment preview for _${projectName}_.`;
+    const info = await vercelInspect(deploymentUrl);
+    const titleText = `Deployment preview for _${info.projectName}_.`;
     const octokit = github.getOctokit(githubToken);
     if (context.eventName === "pull_request") {
         const res = await octokit.rest.issues.listComments({
@@ -2396,7 +2374,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    deploymentId,
+                    inspectorUrl: info.inspectorUrl,
                 }),
             });
         }
@@ -2407,7 +2385,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    deploymentId,
+                    inspectorUrl: info.inspectorUrl,
                 }),
             });
         }
@@ -2426,7 +2404,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    deploymentId,
+                    inspectorUrl: info.inspectorUrl,
                 }),
             });
         }
@@ -2437,7 +2415,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    deploymentId,
+                    inspectorUrl: info.inspectorUrl,
                 }),
             });
         }
