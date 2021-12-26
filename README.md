@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Deploy
-        uses: kik4/simple-vercel-deploy@v2.3.0
+        uses: kik4/simple-vercel-deploy@v2.4.0
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
