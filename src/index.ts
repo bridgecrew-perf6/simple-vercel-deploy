@@ -77,7 +77,7 @@ const vercelDeploy = async (): Promise<string> => {
   return outstr;
 };
 
-const vercelInspect = async (
+const vercelGetDeploy = async (
   deploymentUrl: string
 ): Promise<{ projectName: string; inspectorUrl: string }> => {
   const getRes = await fetch(
@@ -128,9 +128,9 @@ const main = async () => {
     throw new Error("previewUrl is undefined");
   }
 
-  const info = await vercelInspect(deploymentUrl);
+  const deployInfo = await vercelGetDeploy(deploymentUrl);
 
-  const titleText = `Deployment preview for _${info.projectName}_.`;
+  const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
 
   const octokit = github.getOctokit(githubToken);
   if (context.eventName === "pull_request") {
@@ -147,7 +147,7 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          inspectorUrl: info.inspectorUrl,
+          inspectorUrl: deployInfo.inspectorUrl,
         }),
       });
     } else {
@@ -157,7 +157,7 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          inspectorUrl: info.inspectorUrl,
+          inspectorUrl: deployInfo.inspectorUrl,
         }),
       });
     }
@@ -175,7 +175,7 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          inspectorUrl: info.inspectorUrl,
+          inspectorUrl: deployInfo.inspectorUrl,
         }),
       });
     } else {
@@ -185,7 +185,7 @@ const main = async () => {
         body: await buildComment({
           titleText,
           deploymentUrl,
-          inspectorUrl: info.inspectorUrl,
+          inspectorUrl: deployInfo.inspectorUrl,
         }),
       });
     }

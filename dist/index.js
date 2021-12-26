@@ -2325,7 +2325,7 @@ const vercelDeploy = async () => {
     await exec_1.exec("npx", args, options);
     return outstr;
 };
-const vercelInspect = async (deploymentUrl) => {
+const vercelGetDeploy = async (deploymentUrl) => {
     const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentUrl.replace("https://", "")}`, {
         method: "GET",
         headers: { Authorization: `Bearer ${vercelToken}` },
@@ -2357,8 +2357,8 @@ const main = async () => {
     else {
         throw new Error("previewUrl is undefined");
     }
-    const info = await vercelInspect(deploymentUrl);
-    const titleText = `Deployment preview for _${info.projectName}_.`;
+    const deployInfo = await vercelGetDeploy(deploymentUrl);
+    const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
     const octokit = github.getOctokit(githubToken);
     if (context.eventName === "pull_request") {
         const res = await octokit.rest.issues.listComments({
@@ -2374,7 +2374,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    inspectorUrl: info.inspectorUrl,
+                    inspectorUrl: deployInfo.inspectorUrl,
                 }),
             });
         }
@@ -2385,7 +2385,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    inspectorUrl: info.inspectorUrl,
+                    inspectorUrl: deployInfo.inspectorUrl,
                 }),
             });
         }
@@ -2404,7 +2404,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    inspectorUrl: info.inspectorUrl,
+                    inspectorUrl: deployInfo.inspectorUrl,
                 }),
             });
         }
@@ -2415,7 +2415,7 @@ const main = async () => {
                 body: await buildComment({
                     titleText,
                     deploymentUrl,
-                    inspectorUrl: info.inspectorUrl,
+                    inspectorUrl: deployInfo.inspectorUrl,
                 }),
             });
         }
