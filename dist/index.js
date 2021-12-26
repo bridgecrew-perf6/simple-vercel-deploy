@@ -2421,7 +2421,7 @@ const main = async () => {
         }
     }
     else {
-        core.info("github comment skipped.");
+        core.info("Github comment is skipped.");
     }
 };
 main().catch((error) => {
