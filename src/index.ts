@@ -19,6 +19,8 @@ const main = async () => {
 
   if (inputs.creatsGithubComment) {
     await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+  } else {
+    core.info("Github comment is skipped.");
   }
 };
 main().catch((error) => {
