@@ -17,7 +17,9 @@ const main = async () => {
 
   const deploymentInfo = await vercelGetDeploy(deploymentUrl);
 
-  await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+  if (inputs.creatsGithubComment) {
+    await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+  }
 };
 main().catch((error) => {
   core.setFailed(error.message);

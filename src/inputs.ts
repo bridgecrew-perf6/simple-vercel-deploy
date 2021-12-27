@@ -6,4 +6,5 @@ export const inputs = {
   vercelOrgId: core.getInput("vercel-org-id"),
   vercelProjectId: core.getInput("vercel-project-id"),
   isProduction: core.getInput("is-production") === "true",
+  creatsGithubComment: core.getInput("github-comment") !== "false",
 };

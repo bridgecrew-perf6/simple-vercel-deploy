@@ -2289,7 +2289,9 @@ const main = async () => {
         throw new Error("previewUrl is undefined");
     }
     const deploymentInfo = await vercelGetDeploy_1.vercelGetDeploy(deploymentUrl);
-    await createOrUpdateComment_1.createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+    if (inputs_1.inputs.creatsGithubComment) {
+        await createOrUpdateComment_1.createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+    }
 };
 main().catch((error) => {
     core.setFailed(error.message);
@@ -6552,6 +6554,7 @@ exports.inputs = {
     vercelOrgId: core.getInput("vercel-org-id"),
     vercelProjectId: core.getInput("vercel-project-id"),
     isProduction: core.getInput("is-production") === "true",
+    creatsGithubComment: core.getInput("github-comment") !== "false",
 };
 
 
