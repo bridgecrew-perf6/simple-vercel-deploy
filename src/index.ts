@@ -122,21 +122,14 @@ const buildComment = async ({
 Built with commit ${isomorphicSha}.`;
 };
 
-const main = async () => {
-  core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
-  core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
-
-  const deploymentUrl = await vercelDeploy();
-  if (deploymentUrl) {
-    core.setOutput("previewUrl", deploymentUrl);
-  } else {
-    throw new Error("previewUrl is undefined");
-  }
-
-  const deployInfo = await vercelGetDeploy(deploymentUrl);
-
+const createOrUpdateComment = async ({
+  deploymentUrl,
+  deployInfo,
+}: {
+  deploymentUrl: string;
+  deployInfo: { projectName: string; inspectorUrl: string };
+}) => {
   const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
-
   if (context.eventName === "pull_request") {
     const res = await octokit.rest.issues.listComments({
       ...context.repo,
@@ -195,6 +188,36 @@ const main = async () => {
     }
   } else {
     core.info("Github comment is skipped.");
+  }
+};
+
+const main = async () => {
+  core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
+  core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
+
+  const deploymentUrl = await vercelDeploy();
+  if (deploymentUrl) {
+    core.setOutput("previewUrl", deploymentUrl);
+  } else {
+    throw new Error("previewUrl is undefined");
+  }
+
+  const deploymentInfo = await vercelGetDeploy(deploymentUrl);
+
+  try {
+    await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+  } catch (err: unknown) {
+    if (
+      (err as { message: string }).message?.includes(
+        "commit_id has been locked"
+      )
+    ) {
+      core.info(
+        "Github comment is skipped because commit comments are locked."
+      );
+    } else {
+      throw err;
+    }
   }
 };
 main().catch((error) => {
