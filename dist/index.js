@@ -2261,6 +2261,7 @@ const { context } = github;
 const isomorphicSha = context.payload.pull_request
     ? context.payload.pull_request.head.sha
     : context.sha;
+const octokit = github.getOctokit(githubToken);
 const vercelDeploy = async () => {
     let branchName;
     if (context.payload.pull_request) {
@@ -2274,7 +2275,11 @@ const vercelDeploy = async () => {
     }
     let message;
     if (context.payload.pull_request) {
-        message = context.payload.pull_request.title;
+        const res = await octokit.rest.repos.getCommit({
+            ...context.repo,
+            ref: context.payload.pull_request.head.ref,
+        });
+        message = res.data.commit.message;
     }
     else if (context.payload.head_commit) {
         message = context.payload.head_commit.message;
@@ -2359,7 +2364,6 @@ const main = async () => {
     }
     const deployInfo = await vercelGetDeploy(deploymentUrl);
     const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
-    const octokit = github.getOctokit(githubToken);
     if (context.eventName === "pull_request") {
         const res = await octokit.rest.issues.listComments({
             ...context.repo,
