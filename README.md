@@ -23,11 +23,11 @@ jobs:
 
 ## 入力
 
-| 名前              | 必須 | デフォルト | 説明                                                                       |
-| ----------------- | ---- | ---------- | -------------------------------------------------------------------------- |
-| vercel-token      | ✅   |            | Vercel のトークン。                                                        |
-| github-token      | ✅   |            | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。    |
-| vercel-org-id     | ✅   |            | Vercel の team / personal ID。                                             |
-| vercel-project-id | ✅   |            | Vercel の project ID。                                                     |
-| is-production     |      | false      | true / false。true の場合は production デプロイ。                          |
-| github-comment    |      | true       | true / false。false の場合はデプロイ完了時に GitHub にコメントを付けない。 |
+| 名前              | 必須 | デフォルト | 説明                                                                    |
+| ----------------- | ---- | ---------- | ----------------------------------------------------------------------- |
+| vercel-token      | ✅   |            | Vercel のトークン。                                                     |
+| github-token      | ✅   |            | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。 |
+| vercel-org-id     | ✅   |            | Vercel の team / personal ID。                                          |
+| vercel-project-id | ✅   |            | Vercel の project ID。                                                  |
+| is-production     |      | false      | true の場合は production デプロイ。                                     |
+| github-comment    |      | true       | false の場合はデプロイ完了時に GitHub にコメントを付けない。            |
