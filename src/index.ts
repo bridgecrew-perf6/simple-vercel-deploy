@@ -9,6 +9,9 @@ const vercelOrgId = core.getInput("vercel-org-id");
 const vercelProjectId = core.getInput("vercel-project-id");
 const isProduction = core.getInput("is-production") === "true";
 const { context } = github;
+const isomorphicSha = context.payload.pull_request
+  ? context.payload.pull_request.head.sha
+  : context.sha;
 
 const vercelDeploy = async (): Promise<string> => {
   let branchName;
@@ -26,7 +29,7 @@ const vercelDeploy = async (): Promise<string> => {
   } else if (context.payload.head_commit) {
     message = context.payload.head_commit.message;
   } else {
-    message = `Deploy ${context.sha}`;
+    message = `Deploy ${isomorphicSha}`;
   }
 
   let outstr = "";
@@ -61,7 +64,7 @@ const vercelDeploy = async (): Promise<string> => {
     "-m",
     `githubCommitRepoId=${repoId}`,
     "-m",
-    `githubCommitSha=${context.sha}`,
+    `githubCommitSha=${isomorphicSha}`,
     "-m",
     "githubDeployment=1",
     "-m",
@@ -106,15 +109,12 @@ const buildComment = async ({
   deploymentUrl: string;
   inspectorUrl: string;
 }) => {
-  const sha = context.payload.pull_request
-    ? context.payload.pull_request.head.sha
-    : context.sha;
   return `${titleText}
 
 🔍 Inspect: ${inspectorUrl}
 ✅ Preview: ${deploymentUrl}
 
-Built with commit ${sha}.`;
+Built with commit ${isomorphicSha}.`;
 };
 
 const main = async () => {
