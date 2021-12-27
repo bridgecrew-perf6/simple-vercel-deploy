@@ -5175,28 +5175,8 @@ exports.getIDToken = getIDToken;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createOrUpdateComment = void 0;
-const core = __importStar(__webpack_require__(470));
 const utils_1 = __webpack_require__(521);
 const globals_1 = __webpack_require__(709);
 const buildComment = async ({ titleText, deploymentUrl, inspectorUrl, }) => {
@@ -5208,51 +5188,80 @@ const buildComment = async ({ titleText, deploymentUrl, inspectorUrl, }) => {
 Built with commit ${globals_1.isomorphicSha}.`;
 };
 const createOrUpdateComment = async ({ deploymentUrl, deployInfo, }) => {
+    var _a, _b;
     const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
+    const messageBody = await buildComment({
+        titleText,
+        deploymentUrl,
+        inspectorUrl: deployInfo.inspectorUrl,
+    });
     if (utils_1.context.eventName === "pull_request") {
+        // get previous comment
         const res = await globals_1.octokit.rest.issues.listComments({
             ...utils_1.context.repo,
             issue_number: utils_1.context.issue.number,
         });
         const comment = res.data.find((v) => { var _a; return (_a = v.body) === null || _a === void 0 ? void 0 : _a.includes(titleText); });
         const commentId = comment && comment.id;
+        // update
         if (commentId) {
-            await globals_1.octokit.rest.issues.updateComment({
-                ...utils_1.context.repo,
-                comment_id: commentId,
-                body: await buildComment({
-                    titleText,
-                    deploymentUrl,
-                    inspectorUrl: deployInfo.inspectorUrl,
-                }),
-            });
+            try {
+                await globals_1.octokit.rest.issues.updateComment({
+                    ...utils_1.context.repo,
+                    comment_id: commentId,
+                    body: messageBody,
+                });
+                return;
+            }
+            catch (err) {
+                if ((_a = err.message) === null || _a === void 0 ? void 0 : _a.includes("commit_id has been locked")) {
+                    // ロックされていたら作成に移る
+                }
+                else {
+                    throw err;
+                }
+            }
         }
-        else {
-            await globals_1.octokit.rest.issues.createComment({
-                ...utils_1.context.repo,
-                issue_number: utils_1.context.issue.number,
-                body: await buildComment({
-                    titleText,
-                    deploymentUrl,
-                    inspectorUrl: deployInfo.inspectorUrl,
-                }),
-            });
-        }
-    }
-    else if (utils_1.context.eventName === "push") {
-        // コミットコメントの更新に失敗するため更新はなし
-        await globals_1.octokit.rest.repos.createCommitComment({
+        // create
+        await globals_1.octokit.rest.issues.createComment({
             ...utils_1.context.repo,
-            commit_sha: utils_1.context.sha,
-            body: await buildComment({
-                titleText,
-                deploymentUrl,
-                inspectorUrl: deployInfo.inspectorUrl,
-            }),
+            issue_number: utils_1.context.issue.number,
+            body: messageBody,
         });
     }
     else {
-        core.info("Github comment is skipped.");
+        // get previous comment
+        const res = await globals_1.octokit.rest.repos.listCommentsForCommit({
+            ...utils_1.context.repo,
+            commit_sha: utils_1.context.sha,
+        });
+        const comment = res.data.find((v) => v.body.includes(titleText));
+        const commentId = comment && comment.id;
+        // update
+        if (commentId) {
+            try {
+                await globals_1.octokit.rest.repos.updateCommitComment({
+                    ...utils_1.context.repo,
+                    comment_id: commentId,
+                    body: messageBody,
+                });
+                return;
+            }
+            catch (err) {
+                if ((_b = err.message) === null || _b === void 0 ? void 0 : _b.includes("commit_id has been locked")) {
+                    // ロックされていたら作成に移る
+                }
+                else {
+                    throw err;
+                }
+            }
+        }
+        // create
+        await globals_1.octokit.rest.repos.createCommitComment({
+            ...utils_1.context.repo,
+            commit_sha: utils_1.context.sha,
+            body: messageBody,
+        });
     }
 };
 exports.createOrUpdateComment = createOrUpdateComment;

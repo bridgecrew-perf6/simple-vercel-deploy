@@ -1,4 +1,3 @@
-import * as core from "@actions/core";
 import { context } from "@actions/github/lib/utils";
 import { isomorphicSha, octokit } from "./globals";
 
@@ -27,46 +26,86 @@ export const createOrUpdateComment = async ({
   deployInfo: { projectName: string; inspectorUrl: string };
 }) => {
   const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
+
+  const messageBody = await buildComment({
+    titleText,
+    deploymentUrl,
+    inspectorUrl: deployInfo.inspectorUrl,
+  });
+
   if (context.eventName === "pull_request") {
+    // get previous comment
     const res = await octokit.rest.issues.listComments({
       ...context.repo,
       issue_number: context.issue.number,
     });
     const comment = res.data.find((v) => v.body?.includes(titleText));
     const commentId = comment && comment.id;
+
+    // update
     if (commentId) {
-      await octokit.rest.issues.updateComment({
-        ...context.repo,
-        comment_id: commentId,
-        body: await buildComment({
-          titleText,
-          deploymentUrl,
-          inspectorUrl: deployInfo.inspectorUrl,
-        }),
-      });
-    } else {
-      await octokit.rest.issues.createComment({
-        ...context.repo,
-        issue_number: context.issue.number,
-        body: await buildComment({
-          titleText,
-          deploymentUrl,
-          inspectorUrl: deployInfo.inspectorUrl,
-        }),
-      });
+      try {
+        await octokit.rest.issues.updateComment({
+          ...context.repo,
+          comment_id: commentId,
+          body: messageBody,
+        });
+        return;
+      } catch (err: unknown) {
+        if (
+          (err as { message: string }).message?.includes(
+            "commit_id has been locked"
+          )
+        ) {
+          // ロックされていたら作成に移る
+        } else {
+          throw err;
+        }
+      }
     }
-  } else if (context.eventName === "push") {
-    // コミットコメントの更新に失敗するため更新はなし
+
+    // create
+    await octokit.rest.issues.createComment({
+      ...context.repo,
+      issue_number: context.issue.number,
+      body: messageBody,
+    });
+  } else {
+    // get previous comment
+    const res = await octokit.rest.repos.listCommentsForCommit({
+      ...context.repo,
+      commit_sha: context.sha,
+    });
+    const comment = res.data.find((v) => v.body.includes(titleText));
+    const commentId = comment && comment.id;
+
+    // update
+    if (commentId) {
+      try {
+        await octokit.rest.repos.updateCommitComment({
+          ...context.repo,
+          comment_id: commentId,
+          body: messageBody,
+        });
+        return;
+      } catch (err: unknown) {
+        if (
+          (err as { message: string }).message?.includes(
+            "commit_id has been locked"
+          )
+        ) {
+          // ロックされていたら作成に移る
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    // create
     await octokit.rest.repos.createCommitComment({
       ...context.repo,
       commit_sha: context.sha,
-      body: await buildComment({
-        titleText,
-        deploymentUrl,
-        inspectorUrl: deployInfo.inspectorUrl,
-      }),
+      body: messageBody,
     });
-  } else {
-    core.info("Github comment is skipped.");
   }
 };
