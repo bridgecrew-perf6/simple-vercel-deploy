@@ -438,7 +438,7 @@ const child = __importStar(__webpack_require__(129));
 const path = __importStar(__webpack_require__(622));
 const io = __importStar(__webpack_require__(1));
 const ioUtil = __importStar(__webpack_require__(672));
-const timers_1 = __webpack_require__(213);
+const timers_1 = __webpack_require__(343);
 /* eslint-disable @typescript-eslint/unbound-method */
 const IS_WINDOWS = process.platform === 'win32';
 /*
@@ -1314,6 +1314,34 @@ module.exports = require("child_process");
 
 /***/ }),
 
+/***/ 137:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.vercelGetDeploy = void 0;
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const inputs_1 = __webpack_require__(679);
+const vercelGetDeploy = async (deploymentUrl) => {
+    const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentUrl.replace("https://", "")}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${inputs_1.inputs.vercelToken}` },
+    });
+    const res = await getRes.json();
+    return {
+        projectName: res.name,
+        inspectorUrl: res.inspectorUrl,
+    };
+};
+exports.vercelGetDeploy = vercelGetDeploy;
+
+
+/***/ }),
+
 /***/ 141:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -1823,7 +1851,7 @@ module.exports = require("https");
 /***/ 213:
 /***/ (function(module) {
 
-module.exports = require("timers");
+module.exports = require("punycode");
 
 /***/ }),
 
@@ -2244,179 +2272,36 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const exec_1 = __webpack_require__(986);
-const github = __importStar(__webpack_require__(469));
-const node_fetch_1 = __importDefault(__webpack_require__(454));
-const githubToken = core.getInput("github-token");
-const vercelToken = core.getInput("vercel-token");
-const vercelOrgId = core.getInput("vercel-org-id");
-const vercelProjectId = core.getInput("vercel-project-id");
-const isProduction = core.getInput("is-production") === "true";
-const { context } = github;
-const isomorphicSha = context.payload.pull_request
-    ? context.payload.pull_request.head.sha
-    : context.sha;
-const octokit = github.getOctokit(githubToken);
-const vercelDeploy = async () => {
-    let branchName;
-    if (context.payload.pull_request) {
-        branchName = context.payload.pull_request.head.ref;
-    }
-    else if (context.ref) {
-        branchName = context.ref.replace("refs/heads/", "");
-    }
-    else {
-        throw new Error("Branch name is undefined.");
-    }
-    let message;
-    if (context.payload.pull_request) {
-        const res = await octokit.rest.repos.getCommit({
-            ...context.repo,
-            ref: context.payload.pull_request.head.ref,
-        });
-        message = res.data.commit.message;
-    }
-    else if (context.payload.head_commit) {
-        message = context.payload.head_commit.message;
-    }
-    else {
-        message = `Deploy ${isomorphicSha}`;
-    }
-    let outstr = "";
-    const options = {
-        listeners: {
-            stdout: (data) => {
-                outstr += data.toString();
-                core.info(data.toString());
-            },
-            stderr: (data) => {
-                core.info(data.toString());
-            },
-        },
-    };
-    const repoId = context.repo.id;
-    const args = [
-        "vercel",
-        ...(isProduction ? ["--prod"] : []),
-        "-t",
-        vercelToken,
-        "-m",
-        `githubCommitAuthorName=${context.actor}`,
-        "-m",
-        `githubCommitMessage=${message}`,
-        "-m",
-        `githubCommitOrg=${context.repo.owner}`,
-        "-m",
-        `githubCommitRef=${branchName}`,
-        "-m",
-        `githubCommitRepo=${context.repo.repo}`,
-        "-m",
-        `githubCommitRepoId=${repoId}`,
-        "-m",
-        `githubCommitSha=${isomorphicSha}`,
-        "-m",
-        "githubDeployment=1",
-        "-m",
-        `githubOrg=${context.repo.owner}`,
-        "-m",
-        `githubRepo=${context.repo.repo}`,
-        "-m",
-        `githubRepoId=${repoId}`,
-        "-m",
-        `githubCommitAuthorLogin=${context.actor}`,
-    ];
-    await exec_1.exec("npx", args, options);
-    return outstr;
-};
-const vercelGetDeploy = async (deploymentUrl) => {
-    const getRes = await node_fetch_1.default(`https://api.vercel.com/v13/deployments/${deploymentUrl.replace("https://", "")}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${vercelToken}` },
-    });
-    const res = await getRes.json();
-    return {
-        projectName: res.name,
-        inspectorUrl: res.inspectorUrl,
-    };
-};
-const buildComment = async ({ titleText, deploymentUrl, inspectorUrl, }) => {
-    return `${titleText}
-
-🔍 Inspect: ${inspectorUrl}
-✅ Preview: ${deploymentUrl}
-
-Built with commit ${isomorphicSha}.`;
-};
-const createOrUpdateComment = async ({ deploymentUrl, deployInfo, }) => {
-    const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
-    if (context.eventName === "pull_request") {
-        const res = await octokit.rest.issues.listComments({
-            ...context.repo,
-            issue_number: context.issue.number,
-        });
-        const comment = res.data.find((v) => { var _a; return (_a = v.body) === null || _a === void 0 ? void 0 : _a.includes(titleText); });
-        const commentId = comment && comment.id;
-        if (commentId) {
-            await octokit.rest.issues.updateComment({
-                ...context.repo,
-                comment_id: commentId,
-                body: await buildComment({
-                    titleText,
-                    deploymentUrl,
-                    inspectorUrl: deployInfo.inspectorUrl,
-                }),
-            });
-        }
-        else {
-            await octokit.rest.issues.createComment({
-                ...context.repo,
-                issue_number: context.issue.number,
-                body: await buildComment({
-                    titleText,
-                    deploymentUrl,
-                    inspectorUrl: deployInfo.inspectorUrl,
-                }),
-            });
-        }
-    }
-    else if (context.eventName === "push") {
-        // コミットコメントの更新に失敗するため更新はなし
-        await octokit.rest.repos.createCommitComment({
-            ...context.repo,
-            commit_sha: context.sha,
-            body: await buildComment({
-                titleText,
-                deploymentUrl,
-                inspectorUrl: deployInfo.inspectorUrl,
-            }),
-        });
-    }
-    else {
-        core.info("Github comment is skipped.");
-    }
-};
+const createOrUpdateComment_1 = __webpack_require__(506);
+const inputs_1 = __webpack_require__(679);
+const vercelDeploy_1 = __webpack_require__(566);
+const vercelGetDeploy_1 = __webpack_require__(137);
 const main = async () => {
-    core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
-    core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
-    const deploymentUrl = await vercelDeploy();
+    core.exportVariable("VERCEL_ORG_ID", inputs_1.inputs.vercelOrgId);
+    core.exportVariable("VERCEL_PROJECT_ID", inputs_1.inputs.vercelProjectId);
+    const deploymentUrl = await vercelDeploy_1.vercelDeploy();
     if (deploymentUrl) {
         core.setOutput("previewUrl", deploymentUrl);
     }
     else {
         throw new Error("previewUrl is undefined");
     }
-    const deploymentInfo = await vercelGetDeploy(deploymentUrl);
-    await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
+    const deploymentInfo = await vercelGetDeploy_1.vercelGetDeploy(deploymentUrl);
+    await createOrUpdateComment_1.createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
 };
 main().catch((error) => {
     core.setFailed(error.message);
 });
 
+
+/***/ }),
+
+/***/ 343:
+/***/ (function(module) {
+
+module.exports = require("timers");
 
 /***/ }),
 
@@ -5285,6 +5170,96 @@ exports.getIDToken = getIDToken;
 
 /***/ }),
 
+/***/ 506:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createOrUpdateComment = void 0;
+const core = __importStar(__webpack_require__(470));
+const utils_1 = __webpack_require__(521);
+const globals_1 = __webpack_require__(709);
+const buildComment = async ({ titleText, deploymentUrl, inspectorUrl, }) => {
+    return `${titleText}
+
+🔍 Inspect: ${inspectorUrl}
+✅ Preview: ${deploymentUrl}
+
+Built with commit ${globals_1.isomorphicSha}.`;
+};
+const createOrUpdateComment = async ({ deploymentUrl, deployInfo, }) => {
+    const titleText = `Deployment preview for _${deployInfo.projectName}_.`;
+    if (utils_1.context.eventName === "pull_request") {
+        const res = await globals_1.octokit.rest.issues.listComments({
+            ...utils_1.context.repo,
+            issue_number: utils_1.context.issue.number,
+        });
+        const comment = res.data.find((v) => { var _a; return (_a = v.body) === null || _a === void 0 ? void 0 : _a.includes(titleText); });
+        const commentId = comment && comment.id;
+        if (commentId) {
+            await globals_1.octokit.rest.issues.updateComment({
+                ...utils_1.context.repo,
+                comment_id: commentId,
+                body: await buildComment({
+                    titleText,
+                    deploymentUrl,
+                    inspectorUrl: deployInfo.inspectorUrl,
+                }),
+            });
+        }
+        else {
+            await globals_1.octokit.rest.issues.createComment({
+                ...utils_1.context.repo,
+                issue_number: utils_1.context.issue.number,
+                body: await buildComment({
+                    titleText,
+                    deploymentUrl,
+                    inspectorUrl: deployInfo.inspectorUrl,
+                }),
+            });
+        }
+    }
+    else if (utils_1.context.eventName === "push") {
+        // コミットコメントの更新に失敗するため更新はなし
+        await globals_1.octokit.rest.repos.createCommitComment({
+            ...utils_1.context.repo,
+            commit_sha: utils_1.context.sha,
+            body: await buildComment({
+                titleText,
+                deploymentUrl,
+                inspectorUrl: deployInfo.inspectorUrl,
+            }),
+        });
+    }
+    else {
+        core.info("Github comment is skipped.");
+    }
+};
+exports.createOrUpdateComment = createOrUpdateComment;
+
+
+/***/ }),
+
 /***/ 510:
 /***/ (function(module) {
 
@@ -5469,7 +5444,7 @@ module.exports.Collection = Hook.Collection
 "use strict";
 
 
-var punycode = __webpack_require__(815);
+var punycode = __webpack_require__(213);
 var mappingTable = __webpack_require__(967);
 
 var PROCESSING_OPTIONS = {
@@ -6209,6 +6184,113 @@ exports.HttpClient = HttpClient;
 
 /***/ }),
 
+/***/ 566:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.vercelDeploy = void 0;
+const core = __importStar(__webpack_require__(470));
+const exec_1 = __webpack_require__(986);
+const utils_1 = __webpack_require__(521);
+const globals_1 = __webpack_require__(709);
+const inputs_1 = __webpack_require__(679);
+const vercelDeploy = async () => {
+    let branchName;
+    if (utils_1.context.payload.pull_request) {
+        branchName = utils_1.context.payload.pull_request.head.ref;
+    }
+    else if (utils_1.context.ref) {
+        branchName = utils_1.context.ref.replace("refs/heads/", "");
+    }
+    else {
+        throw new Error("Branch name is undefined.");
+    }
+    let message;
+    if (utils_1.context.payload.pull_request) {
+        const res = await globals_1.octokit.rest.repos.getCommit({
+            ...utils_1.context.repo,
+            ref: utils_1.context.payload.pull_request.head.ref,
+        });
+        message = res.data.commit.message;
+    }
+    else if (utils_1.context.payload.head_commit) {
+        message = utils_1.context.payload.head_commit.message;
+    }
+    else {
+        message = `Deploy ${globals_1.isomorphicSha}`;
+    }
+    let outstr = "";
+    const options = {
+        listeners: {
+            stdout: (data) => {
+                outstr += data.toString();
+                core.info(data.toString());
+            },
+            stderr: (data) => {
+                core.info(data.toString());
+            },
+        },
+    };
+    const repoId = utils_1.context.repo.id;
+    const args = [
+        "vercel",
+        ...(inputs_1.inputs.isProduction ? ["--prod"] : []),
+        "-t",
+        inputs_1.inputs.vercelToken,
+        "-m",
+        `githubCommitAuthorName=${utils_1.context.actor}`,
+        "-m",
+        `githubCommitMessage=${message}`,
+        "-m",
+        `githubCommitOrg=${utils_1.context.repo.owner}`,
+        "-m",
+        `githubCommitRef=${branchName}`,
+        "-m",
+        `githubCommitRepo=${utils_1.context.repo.repo}`,
+        "-m",
+        `githubCommitRepoId=${repoId}`,
+        "-m",
+        `githubCommitSha=${globals_1.isomorphicSha}`,
+        "-m",
+        "githubDeployment=1",
+        "-m",
+        `githubOrg=${utils_1.context.repo.owner}`,
+        "-m",
+        `githubRepo=${utils_1.context.repo.repo}`,
+        "-m",
+        `githubRepoId=${repoId}`,
+        "-m",
+        `githubCommitAuthorLogin=${utils_1.context.actor}`,
+    ];
+    await exec_1.exec("npx", args, options);
+    return outstr;
+};
+exports.vercelDeploy = vercelDeploy;
+
+
+/***/ }),
+
 /***/ 605:
 /***/ (function(module) {
 
@@ -6428,6 +6510,44 @@ exports.getCmdPath = getCmdPath;
 
 /***/ }),
 
+/***/ 679:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.inputs = void 0;
+const core = __importStar(__webpack_require__(470));
+exports.inputs = {
+    githubToken: core.getInput("github-token"),
+    vercelToken: core.getInput("vercel-token"),
+    vercelOrgId: core.getInput("vercel-org-id"),
+    vercelProjectId: core.getInput("vercel-project-id"),
+    isProduction: core.getInput("is-production") === "true",
+};
+
+
+/***/ }),
+
 /***/ 692:
 /***/ (function(__unusedmodule, exports) {
 
@@ -6452,6 +6572,43 @@ class Deprecation extends Error {
 }
 
 exports.Deprecation = Deprecation;
+
+
+/***/ }),
+
+/***/ 709:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.octokit = exports.isomorphicSha = void 0;
+const github = __importStar(__webpack_require__(469));
+const utils_1 = __webpack_require__(521);
+const inputs_1 = __webpack_require__(679);
+exports.isomorphicSha = utils_1.context.payload.pull_request
+    ? utils_1.context.payload.pull_request.head.sha
+    : utils_1.context.sha;
+exports.octokit = github.getOctokit(inputs_1.inputs.githubToken);
 
 
 /***/ }),
@@ -7029,13 +7186,6 @@ const createTokenAuth = function createTokenAuth(token) {
 exports.createTokenAuth = createTokenAuth;
 //# sourceMappingURL=index.js.map
 
-
-/***/ }),
-
-/***/ 815:
-/***/ (function(module) {
-
-module.exports = require("punycode");
 
 /***/ }),
 
@@ -8084,7 +8234,7 @@ exports.restEndpointMethods = restEndpointMethods;
 
 "use strict";
 
-const punycode = __webpack_require__(815);
+const punycode = __webpack_require__(213);
 const tr46 = __webpack_require__(530);
 
 const specialSchemes = {

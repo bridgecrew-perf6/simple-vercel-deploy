@@ -1,0 +1,9 @@
+import * as core from "@actions/core";
+
+export const inputs = {
+  githubToken: core.getInput("github-token"),
+  vercelToken: core.getInput("vercel-token"),
+  vercelOrgId: core.getInput("vercel-org-id"),
+  vercelProjectId: core.getInput("vercel-project-id"),
+  isProduction: core.getInput("is-production") === "true",
+};
