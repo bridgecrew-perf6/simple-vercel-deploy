@@ -2385,41 +2385,22 @@ const createOrUpdateComment = async ({ deploymentUrl, deployInfo, }) => {
         }
     }
     else if (context.eventName === "push") {
-        const res = await octokit.rest.repos.listCommentsForCommit({
+        // コミットコメントの更新に失敗するため更新はなし
+        await octokit.rest.repos.createCommitComment({
             ...context.repo,
             commit_sha: context.sha,
+            body: await buildComment({
+                titleText,
+                deploymentUrl,
+                inspectorUrl: deployInfo.inspectorUrl,
+            }),
         });
-        const comment = res.data.find((v) => v.body.includes(titleText));
-        const commentId = comment && comment.id;
-        if (commentId) {
-            await octokit.rest.repos.updateCommitComment({
-                ...context.repo,
-                comment_id: commentId,
-                body: await buildComment({
-                    titleText,
-                    deploymentUrl,
-                    inspectorUrl: deployInfo.inspectorUrl,
-                }),
-            });
-        }
-        else {
-            await octokit.rest.repos.createCommitComment({
-                ...context.repo,
-                commit_sha: context.sha,
-                body: await buildComment({
-                    titleText,
-                    deploymentUrl,
-                    inspectorUrl: deployInfo.inspectorUrl,
-                }),
-            });
-        }
     }
     else {
         core.info("Github comment is skipped.");
     }
 };
 const main = async () => {
-    var _a;
     core.exportVariable("VERCEL_ORG_ID", vercelOrgId);
     core.exportVariable("VERCEL_PROJECT_ID", vercelProjectId);
     const deploymentUrl = await vercelDeploy();
@@ -2430,17 +2411,7 @@ const main = async () => {
         throw new Error("previewUrl is undefined");
     }
     const deploymentInfo = await vercelGetDeploy(deploymentUrl);
-    try {
-        await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
-    }
-    catch (err) {
-        if ((_a = err.message) === null || _a === void 0 ? void 0 : _a.includes("commit_id has been locked")) {
-            core.info("Github comment is skipped because commit comments are locked.");
-        }
-        else {
-            throw err;
-        }
-    }
+    await createOrUpdateComment({ deploymentUrl, deployInfo: deploymentInfo });
 };
 main().catch((error) => {
     core.setFailed(error.message);
