@@ -23,10 +23,10 @@ jobs:
 
 ## 入力
 
-| 名前              | Required | 説明                                                                    |
-| ----------------- | -------- | ----------------------------------------------------------------------- |
-| vercel-token      | required | Vercel のトークン。                                                     |
-| github-token      | required | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。 |
-| vercel-org-id     | required | Vercel の team / personal ID。                                          |
-| vercel-project-id | required | Vercel の project ID。                                              |
-| is-production     | optional | true / false。デフォルトは false。true の場合は production デプロイ。   |
+| 名前              | 必須 | デフォルト | 説明                                                                    |
+| ----------------- | ---- | ---------- | ----------------------------------------------------------------------- |
+| vercel-token      | ✅   |            | Vercel のトークン。                                                     |
+| github-token      | ✅   |            | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。 |
+| vercel-org-id     | ✅   |            | Vercel の team / personal ID。                                          |
+| vercel-project-id | ✅   |            | Vercel の project ID。                                                  |
+| is-production     |      | false      | true / false。true の場合は production デプロイ。                       |
