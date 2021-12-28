@@ -2279,8 +2279,6 @@ const inputs_1 = __webpack_require__(679);
 const vercelDeploy_1 = __webpack_require__(566);
 const vercelGetDeploy_1 = __webpack_require__(137);
 const main = async () => {
-    core.exportVariable("VERCEL_ORG_ID", inputs_1.inputs.vercelOrgId);
-    core.exportVariable("VERCEL_PROJECT_ID", inputs_1.inputs.vercelProjectId);
     const deploymentUrl = await vercelDeploy_1.vercelDeploy();
     if (deploymentUrl) {
         core.setOutput("previewUrl", deploymentUrl);
@@ -6227,6 +6225,7 @@ exports.vercelDeploy = void 0;
 const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const utils_1 = __webpack_require__(521);
+__webpack_require__(469);
 const globals_1 = __webpack_require__(709);
 const inputs_1 = __webpack_require__(679);
 const vercelDeploy = async () => {
@@ -6265,6 +6264,11 @@ const vercelDeploy = async () => {
                 core.info(data.toString());
             },
         },
+        env: {
+            ...process.env,
+            VERCEL_ORG_ID: inputs_1.inputs.vercelOrgId,
+            VERCEL_PROJECT_ID: inputs_1.inputs.vercelProjectId,
+        }
     };
     const repoId = utils_1.context.repo.id;
     const args = [

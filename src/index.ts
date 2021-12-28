@@ -5,9 +5,6 @@ import { vercelDeploy } from "./vercelDeploy";
 import { vercelGetDeploy } from "./vercelGetDeploy";
 
 const main = async () => {
-  core.exportVariable("VERCEL_ORG_ID", inputs.vercelOrgId);
-  core.exportVariable("VERCEL_PROJECT_ID", inputs.vercelProjectId);
-
   const deploymentUrl = await vercelDeploy();
   if (deploymentUrl) {
     core.setOutput("previewUrl", deploymentUrl);

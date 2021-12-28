@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import { context } from "@actions/github/lib/utils";
+import github from "@actions/github";
 import { isomorphicSha, octokit } from "./globals";
 import { inputs } from "./inputs";
 
@@ -38,6 +39,11 @@ export const vercelDeploy = async (): Promise<string> => {
         core.info(data.toString());
       },
     },
+    env: {
+      ...process.env,
+      VERCEL_ORG_ID: inputs.vercelOrgId,
+      VERCEL_PROJECT_ID: inputs.vercelProjectId,
+    }
   };
 
   const repoId = (context.repo as any).id as number;
