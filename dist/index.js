@@ -1855,6 +1855,50 @@ module.exports = require("punycode");
 
 /***/ }),
 
+/***/ 214:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.vercelDeployWithRest = void 0;
+const github_1 = __webpack_require__(469);
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const getBranchName_1 = __webpack_require__(335);
+const getRepo_1 = __webpack_require__(594);
+const globals_1 = __webpack_require__(709);
+const inputs_1 = __webpack_require__(679);
+const vercelDeployWithRest = async () => {
+    const { id } = await getRepo_1.getRepo();
+    const branchName = getBranchName_1.getBranchName();
+    const getRes = await node_fetch_1.default("https://api.vercel.com/v13/deployments", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${inputs_1.inputs.vercelToken}` },
+        body: JSON.stringify({
+            name: github_1.context.repo.repo,
+            gitSource: {
+                type: "github",
+                ref: branchName,
+                sha: globals_1.isomorphicSha,
+                repoId: id,
+            },
+            target: inputs_1.inputs.isProduction ? "production" : undefined,
+        }),
+    });
+    if (!getRes.ok) {
+        throw new Error("Fetching deployment api is failed.");
+    }
+    const res = await getRes.json();
+    return "https://" + res.url;
+};
+exports.vercelDeployWithRest = vercelDeployWithRest;
+
+
+/***/ }),
+
 /***/ 226:
 /***/ (function(__unusedmodule, exports) {
 
@@ -2277,9 +2321,12 @@ const core = __importStar(__webpack_require__(470));
 const createOrUpdateComment_1 = __webpack_require__(506);
 const inputs_1 = __webpack_require__(679);
 const vercelDeploy_1 = __webpack_require__(566);
+const vercelDeployWithRest_1 = __webpack_require__(214);
 const vercelGetDeploy_1 = __webpack_require__(137);
 const main = async () => {
-    const deploymentUrl = await vercelDeploy_1.vercelDeploy();
+    const deploymentUrl = inputs_1.inputs.usesRestApi
+        ? await vercelDeployWithRest_1.vercelDeployWithRest()
+        : await vercelDeploy_1.vercelDeploy();
     if (deploymentUrl) {
         core.setOutput("previewUrl", deploymentUrl);
     }
@@ -2297,6 +2344,32 @@ const main = async () => {
 main().catch((error) => {
     core.setFailed(error.message);
 });
+
+
+/***/ }),
+
+/***/ 335:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBranchName = void 0;
+const github_1 = __webpack_require__(469);
+const getBranchName = () => {
+    let branchName;
+    if (github_1.context.payload.pull_request) {
+        branchName = github_1.context.payload.pull_request.head.ref;
+    }
+    else if (github_1.context.ref) {
+        branchName = github_1.context.ref.replace("refs/heads/", "");
+    }
+    else {
+        throw new Error("Branch name is undefined.");
+    }
+    return branchName;
+};
+exports.getBranchName = getBranchName;
 
 
 /***/ }),
@@ -6225,20 +6298,12 @@ exports.vercelDeploy = void 0;
 const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const utils_1 = __webpack_require__(521);
-__webpack_require__(469);
 const globals_1 = __webpack_require__(709);
 const inputs_1 = __webpack_require__(679);
+const getBranchName_1 = __webpack_require__(335);
+const getRepo_1 = __webpack_require__(594);
 const vercelDeploy = async () => {
-    let branchName;
-    if (utils_1.context.payload.pull_request) {
-        branchName = utils_1.context.payload.pull_request.head.ref;
-    }
-    else if (utils_1.context.ref) {
-        branchName = utils_1.context.ref.replace("refs/heads/", "");
-    }
-    else {
-        throw new Error("Branch name is undefined.");
-    }
+    const branchName = getBranchName_1.getBranchName();
     let message;
     if (utils_1.context.payload.pull_request) {
         const res = await globals_1.octokit.rest.repos.getCommit({
@@ -6268,9 +6333,9 @@ const vercelDeploy = async () => {
             ...process.env,
             VERCEL_ORG_ID: inputs_1.inputs.vercelOrgId,
             VERCEL_PROJECT_ID: inputs_1.inputs.vercelProjectId,
-        }
+        },
     };
-    const repoId = utils_1.context.repo.id;
+    const repo = await getRepo_1.getRepo();
     const args = [
         "vercel",
         ...(inputs_1.inputs.isProduction ? ["--prod"] : []),
@@ -6287,7 +6352,7 @@ const vercelDeploy = async () => {
         "-m",
         `githubCommitRepo=${utils_1.context.repo.repo}`,
         "-m",
-        `githubCommitRepoId=${repoId}`,
+        `githubCommitRepoId=${repo.id}`,
         "-m",
         `githubCommitSha=${globals_1.isomorphicSha}`,
         "-m",
@@ -6297,7 +6362,7 @@ const vercelDeploy = async () => {
         "-m",
         `githubRepo=${utils_1.context.repo.repo}`,
         "-m",
-        `githubRepoId=${repoId}`,
+        `githubRepoId=${repo.id}`,
         "-m",
         `githubCommitAuthorLogin=${utils_1.context.actor}`,
     ];
@@ -6305,6 +6370,24 @@ const vercelDeploy = async () => {
     return outstr;
 };
 exports.vercelDeploy = vercelDeploy;
+
+
+/***/ }),
+
+/***/ 594:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRepo = void 0;
+const github_1 = __webpack_require__(469);
+const globals_1 = __webpack_require__(709);
+const getRepo = async () => {
+    const res = await globals_1.octokit.rest.repos.get(github_1.context.repo);
+    return res.data;
+};
+exports.getRepo = getRepo;
 
 
 /***/ }),
@@ -6562,6 +6645,7 @@ exports.inputs = {
     vercelProjectId: core.getInput("vercel-project-id"),
     isProduction: core.getInput("is-production") === "true",
     creatsGithubComment: core.getInput("github-comment") !== "false",
+    usesRestApi: core.getInput("uses-rest-api") === "true",
 };
 
 

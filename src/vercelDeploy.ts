@@ -1,19 +1,13 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import { context } from "@actions/github/lib/utils";
-import github from "@actions/github";
 import { isomorphicSha, octokit } from "./globals";
 import { inputs } from "./inputs";
+import { getBranchName } from "./getBranchName";
+import { getRepo } from "./getRepo";
 
 export const vercelDeploy = async (): Promise<string> => {
-  let branchName;
-  if (context.payload.pull_request) {
-    branchName = context.payload.pull_request.head.ref;
-  } else if (context.ref) {
-    branchName = context.ref.replace("refs/heads/", "");
-  } else {
-    throw new Error("Branch name is undefined.");
-  }
+  const branchName = getBranchName();
 
   let message;
   if (context.payload.pull_request) {
@@ -43,10 +37,10 @@ export const vercelDeploy = async (): Promise<string> => {
       ...process.env,
       VERCEL_ORG_ID: inputs.vercelOrgId,
       VERCEL_PROJECT_ID: inputs.vercelProjectId,
-    }
+    },
   };
 
-  const repoId = (context.repo as any).id as number;
+  const repo = await getRepo();
   const args = [
     "vercel",
     ...(inputs.isProduction ? ["--prod"] : []),
@@ -63,7 +57,7 @@ export const vercelDeploy = async (): Promise<string> => {
     "-m",
     `githubCommitRepo=${context.repo.repo}`,
     "-m",
-    `githubCommitRepoId=${repoId}`,
+    `githubCommitRepoId=${repo.id}`,
     "-m",
     `githubCommitSha=${isomorphicSha}`,
     "-m",
@@ -73,7 +67,7 @@ export const vercelDeploy = async (): Promise<string> => {
     "-m",
     `githubRepo=${context.repo.repo}`,
     "-m",
-    `githubRepoId=${repoId}`,
+    `githubRepoId=${repo.id}`,
     "-m",
     `githubCommitAuthorLogin=${context.actor}`,
   ];

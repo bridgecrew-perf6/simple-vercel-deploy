@@ -2,10 +2,13 @@ import * as core from "@actions/core";
 import { createOrUpdateComment } from "./createOrUpdateComment";
 import { inputs } from "./inputs";
 import { vercelDeploy } from "./vercelDeploy";
+import { vercelDeployWithRest } from "./vercelDeployWithRest";
 import { vercelGetDeploy } from "./vercelGetDeploy";
 
 const main = async () => {
-  const deploymentUrl = await vercelDeploy();
+  const deploymentUrl = inputs.usesRestApi
+    ? await vercelDeployWithRest()
+    : await vercelDeploy();
   if (deploymentUrl) {
     core.setOutput("previewUrl", deploymentUrl);
   } else {

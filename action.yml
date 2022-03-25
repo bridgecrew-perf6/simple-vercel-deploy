@@ -1,29 +1,33 @@
-name: 'Simple Vercel Deploy'
-description: 'Deploy to Vercel'
+name: "Simple Vercel Deploy"
+description: "Deploy to Vercel"
 inputs:
   github-token:
-    description: 'github token'
+    description: "github token"
     required: true
   vercel-token:
-    description: 'vercel token'
+    description: "vercel token"
     required: true
   vercel-org-id:
-    description: 'vercel team / personal id'
+    description: "vercel team / personal id"
     required: true
   vercel-project-id:
-    description: 'vercel project id'
+    description: "vercel project id"
     required: true
   is-production:
-    description: 'production flag'
+    description: "production flag"
     required: false
-    default: 'false'
+    default: "false"
   github-comment:
-    description: 'github comment flag'
+    description: "github comment flag"
     required: false
-    default: 'true'
+    default: "true"
+  uses-rest-api:
+    description: "using rest api flag"
+    required: false
+    default: "false"
 runs:
-  using: 'node12'
-  main: 'dist/index.js'
+  using: "node12"
+  main: "dist/index.js"
 branding:
-  icon: 'cloud-lightning'
-  color: 'yellow'
+  icon: "cloud-lightning"
+  color: "yellow"
