@@ -12,6 +12,10 @@ const main = async () => {
   if (deploymentUrl) {
     core.setOutput("previewUrl", deploymentUrl);
   } else {
+    if (inputs.noWaitDeployment) {
+      core.info("No wait deployment.");
+      return;
+    }
     throw new Error("previewUrl is undefined");
   }
 

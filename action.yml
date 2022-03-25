@@ -25,6 +25,10 @@ inputs:
     description: "using rest api flag"
     required: false
     default: "false"
+  no-wait-deployment:
+    description: "deployment waiting flag"
+    required: false
+    default: "false"
 runs:
   using: "node12"
   main: "dist/index.js"

@@ -12,4 +12,5 @@ export const inputs = {
     ? false
     : core.getInput("github-comment") !== "false",
   usesRestApi,
+  noWaitDeployment: core.getInput("no-wait-deployment") === "true",
 };

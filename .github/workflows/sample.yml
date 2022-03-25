@@ -19,5 +19,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          uses-rest-api: ${{ true }}
+          no-wait-deployment: ${{ true }}
           is-production: ${{ github.ref_name == 'main' }}

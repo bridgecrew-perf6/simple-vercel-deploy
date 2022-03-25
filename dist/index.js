@@ -2331,6 +2331,10 @@ const main = async () => {
         core.setOutput("previewUrl", deploymentUrl);
     }
     else {
+        if (inputs_1.inputs.noWaitDeployment) {
+            core.info("No wait deployment.");
+            return;
+        }
         throw new Error("previewUrl is undefined");
     }
     const deploymentInfo = await vercelGetDeploy_1.vercelGetDeploy(deploymentUrl);
@@ -6366,7 +6370,13 @@ const vercelDeploy = async () => {
         "-m",
         `githubCommitAuthorLogin=${utils_1.context.actor}`,
     ];
-    await exec_1.exec("npx", args, options);
+    if (inputs_1.inputs.noWaitDeployment) {
+        exec_1.exec("npx", args, { env: options.env });
+        return null;
+    }
+    else {
+        await exec_1.exec("npx", args, options);
+    }
     return outstr;
 };
 exports.vercelDeploy = vercelDeploy;
@@ -6649,6 +6659,7 @@ exports.inputs = {
         ? false
         : core.getInput("github-comment") !== "false",
     usesRestApi,
+    noWaitDeployment: core.getInput("no-wait-deployment") === "true",
 };
 
 

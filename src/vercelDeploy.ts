@@ -6,7 +6,7 @@ import { inputs } from "./inputs";
 import { getBranchName } from "./getBranchName";
 import { getRepo } from "./getRepo";
 
-export const vercelDeploy = async (): Promise<string> => {
+export const vercelDeploy = async (): Promise<string | null> => {
   const branchName = getBranchName();
 
   let message;
@@ -71,6 +71,13 @@ export const vercelDeploy = async (): Promise<string> => {
     "-m",
     `githubCommitAuthorLogin=${context.actor}`,
   ];
-  await exec("npx", args, options);
+
+  if (inputs.noWaitDeployment) {
+    exec("npx", args, { env: options.env });
+    return null;
+  } else {
+    await exec("npx", args, options);
+  }
+
   return outstr;
 };
