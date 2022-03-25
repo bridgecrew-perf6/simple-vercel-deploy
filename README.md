@@ -23,12 +23,12 @@ jobs:
 
 ## 入力
 
-| 名前              | 必須 | デフォルト | 説明                                                                                           |
-| ----------------- | ---- | ---------- | ---------------------------------------------------------------------------------------------- |
-| vercel-token      | ✅   |            | Vercel のトークン。                                                                            |
-| github-token      | ✅   |            | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。                        |
-| vercel-org-id     | ✅   |            | Vercel の team / personal ID。                                                                 |
-| vercel-project-id | ✅   |            | Vercel の project ID。                                                                         |
-| is-production     |      | false      | true の場合は production デプロイ。                                                            |
-| github-comment    |      | true       | false の場合はデプロイ完了時に GitHub にコメントを付けない。                                   |
-| uses-rest-api     |      | false      | true の場合はデプロイに Vercel REST API を使用。（この際はデプロイ完了を待たずにコメントする） |
+| 名前              | 必須 | デフォルト | 説明                                                                                                                                                  |
+| ----------------- | ---- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| vercel-token      | ✅   |            | Vercel のトークン。                                                                                                                                   |
+| github-token      | ✅   |            | GitHub のトークン。`${{ secrets.GITHUB_TOKEN }}` を指定するだけでよい。                                                                               |
+| vercel-org-id     | ✅   |            | Vercel の team / personal ID。                                                                                                                        |
+| vercel-project-id | ✅   |            | Vercel の project ID。                                                                                                                                |
+| is-production     |      | false      | true の場合は production デプロイ。                                                                                                                   |
+| github-comment    |      | true       | false の場合はデプロイ完了時に GitHub にコメントを付けない。                                                                                          |
+| uses-rest-api     |      | false      | true の場合はデプロイに Vercel REST API を使用。（この際はデプロイ完了を待たない。また、Vercel のリリース処理になるたりコメントはオフにはできない。） |

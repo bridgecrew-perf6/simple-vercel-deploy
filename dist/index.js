@@ -6638,14 +6638,17 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.inputs = void 0;
 const core = __importStar(__webpack_require__(470));
+const usesRestApi = core.getInput("uses-rest-api") === "true";
 exports.inputs = {
     githubToken: core.getInput("github-token"),
     vercelToken: core.getInput("vercel-token"),
     vercelOrgId: core.getInput("vercel-org-id"),
     vercelProjectId: core.getInput("vercel-project-id"),
     isProduction: core.getInput("is-production") === "true",
-    creatsGithubComment: core.getInput("github-comment") !== "false",
-    usesRestApi: core.getInput("uses-rest-api") === "true",
+    creatsGithubComment: usesRestApi
+        ? false
+        : core.getInput("github-comment") !== "false",
+    usesRestApi,
 };
 
 
